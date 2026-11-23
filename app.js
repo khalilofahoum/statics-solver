@@ -875,7 +875,7 @@
 <li><b>Springs</b>: Vertical, Horizontal and Rotational spring tools — click a joint (or a point on a member) to add one, click again to remove it, and set the stiffness k in the Inspector. Spring forces are shown with the reactions.</li>
 <li><b>Hinge</b>: click a joint to hinge all members there, or click near one end of a member to hinge just that end.</li>
 <li><b>Loads</b>: Point force and Moment go on a joint or anywhere on a member. Linear q (uniform, trapezoid, triangle), Parabolic q and Function q(x) go on a member. Click, then type the values in the Inspector; every load can cover only part of the member.</li>
-<li><b>Select</b>: click to edit, drag a joint to move it, Delete removes it.</li><li><b>Moving the view</b>: the Pan tool, dragging empty space in Select, the middle or right mouse button, holding Space, or the arrow keys. The wheel and + / − zoom; Fit shows everything.</li></ul>
+<li><b>Select</b>: click to edit, drag a joint to move it, Delete removes it.</li><li><b>Ribbon sections</b>: click a section title (Edit, Structure, Supports \u2026) to fold it into one button, or use Collapse / Expand at the top of the ribbon for all sections at once. Clicking a folded button opens all its tools in a row to the side; pick one and the row closes. The folded button shows the tool you are using.</li><li><b>Tool ribbon</b>: drag its right edge to make it wider or narrower (below about 100 px it shows icons only), or focus the edge and use ← →. Double-click the edge to reset. The width is remembered.</li><li><b>Moving the view</b>: the Pan tool, dragging empty space in Select, the middle or right mouse button, holding Space, or the arrow keys. The wheel and + / − zoom; Fit shows everything.</li></ul>
 <h3>Results</h3><ul class="help"><li>The structure is re-solved after every change. The badge at the top shows whether it is determinate, indeterminate or a mechanism.</li>
 <li>Switch the N, S, M, reactions and deformed-shape layers with the chips above the drawing. Hover any member to read the values at that point.</li>
 <li><b>Probe</b> pins a point: from there you get displacements by the unit-load (Maxwell–Mohr) method with the virtual m diagram, and influence lines.</li>
@@ -934,13 +934,97 @@
   ];
   function setTool(t) {
     tool = t; pending = null;
-    document.querySelectorAll('#tools button').forEach(b => b.classList.toggle('on', b.dataset.tool === t));
+    document.querySelectorAll('[data-tool]').forEach(b => b.classList.toggle('on', b.dataset.tool === t));
+    syncGroups();
     svg.classList.toggle('sel', t === 'select'); svg.classList.toggle('grab', t === 'pan');
     $('#hint').textContent = (TOOLS.find(x => x[0] === t) || [])[4] || ''; drawOverlay();
   }
-  TOOLS.forEach(t => {
-    if (!t[0]) { $('#tools').append(h('div', { class: 'sep' }, t[1])); return; }
-    $('#tools').append(h('button', { 'data-tool': t[0], title: t[4], html: t[3] + `<span>${t[1]}</span>` + (t[2] ? `<kbd>${t[2]}</kbd>` : ''), onclick: () => setTool(t[0]) }));
+  // ---------- ribbon sections: each can be collapsed to one button that opens its tools sideways
+  const GROUPS = [];
+  TOOLS.forEach(t => { if (!t[0]) GROUPS.push({ name: t[1], tools: [] }); else GROUPS[GROUPS.length - 1].tools.push(t); });
+  const toolBtn = t => h('button', { 'data-tool': t[0], title: t[4], html: t[3] + `<span>${t[1]}</span>` + (t[2] ? `<kbd>${t[2]}</kbd>` : ''), onclick: () => { setTool(t[0]); closeFlyout(); } });
+  const CHEV = '<svg class="chev" viewBox="0 0 10 10"><path d="M2.5 3.5L5 6l2.5-2.5"/></svg>';
+  const GROUP_KEY = LS + '-navgroups';
+  let collapsed = {};
+  try { (JSON.parse(localStorage.getItem(GROUP_KEY) || '[]') || []).forEach(n => { collapsed[n] = true; }); } catch (e) { /* ignore */ }
+  const flyout = h('div', { id: 'flyout', role: 'menu', hidden: true });
+  document.body.append(flyout);
+  let flyGroup = null;
+  function closeFlyout() { if (!flyGroup) return; flyGroup = null; flyout.hidden = true; flyout.innerHTML = ''; document.querySelectorAll('.gfold').forEach(b => b.setAttribute('aria-expanded', 'false')); }
+  function openFlyout(g, anchor) {
+    if (flyGroup === g) { closeFlyout(); return; }
+    closeFlyout(); flyGroup = g;
+    flyout.innerHTML = ''; flyout.append(h('div', { class: 'fname' }, g.name), h('div', { class: 'frow' }, g.tools.map(toolBtn)));
+    flyout.querySelectorAll('[data-tool]').forEach(b => b.classList.toggle('on', b.dataset.tool === tool));
+    flyout.hidden = false; anchor.setAttribute('aria-expanded', 'true');
+    const r = anchor.getBoundingClientRect(), left = $('#tools').getBoundingClientRect().right + 6;
+    flyout.style.left = left + 'px'; flyout.style.maxWidth = Math.max(160, innerWidth - left - 8) + 'px';
+    flyout.style.top = Math.max(8, Math.min(r.top - 6, innerHeight - flyout.offsetHeight - 8)) + 'px';
+    const first = flyout.querySelector('.on') || flyout.querySelector('[data-tool]'); if (first) first.focus({ preventScroll: true });
+  }
+  function saveGroups() { try { localStorage.setItem(GROUP_KEY, JSON.stringify(Object.keys(collapsed).filter(k => collapsed[k]))); } catch (e) { /* ignore */ } }
+  // the folded button shows the active tool's icon when that tool belongs to the section
+  function syncGroups() {
+    GROUPS.forEach(g => {
+      if (!g.el) return;
+      const act = g.tools.find(t => t[0] === tool), shown = act || g.tools[0];
+      g.el.classList.toggle('collapsed', !!collapsed[g.name]);
+      g.head.setAttribute('aria-expanded', String(!collapsed[g.name]));
+      g.fold.classList.toggle('on', !!act);
+      g.fold.innerHTML = shown[3] + `<span>${esc(g.name)}${act ? ': ' + esc(act[1]) : ''}</span><i class="more"></i>`;
+      g.fold.title = g.name + ' \u2014 click to show its tools';
+    });
+  }
+  GROUPS.forEach(g => {
+    g.head = h('button', { class: 'ghead', title: 'Collapse or expand this section', html: `<span>${esc(g.name)}</span>${CHEV}`, onclick: () => { collapsed[g.name] = !collapsed[g.name]; saveGroups(); closeFlyout(); syncGroups(); } });
+    g.fold = h('button', { class: 'gfold', 'aria-haspopup': 'menu', 'aria-expanded': 'false', onclick: e => openFlyout(g, e.currentTarget) });
+    g.el = h('div', { class: 'grp' }, g.head, h('div', { class: 'gbody' }, g.tools.map(toolBtn)), g.fold);
+    $('#tools').append(g.el);
+  });
+  $('#tools').prepend(h('div', { class: 'gall' },
+    h('button', { title: 'Collapse every section', onclick: () => { GROUPS.forEach(g => { collapsed[g.name] = true; }); saveGroups(); closeFlyout(); syncGroups(); } }, 'Collapse'),
+    h('button', { title: 'Expand every section', onclick: () => { collapsed = {}; saveGroups(); closeFlyout(); syncGroups(); } }, 'Expand')));
+  document.addEventListener('pointerdown', e => { if (flyGroup && !flyout.contains(e.target) && !e.target.closest('.gfold')) closeFlyout(); }, true);
+  flyout.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { e.stopPropagation(); const g = flyGroup; closeFlyout(); if (g) g.fold.focus(); return; }
+    const bs = [...flyout.querySelectorAll('[data-tool]')], i = bs.indexOf(document.activeElement), d = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
+    if (d && i >= 0) { e.preventDefault(); e.stopPropagation(); bs[(i + d + bs.length) % bs.length].focus(); }
+  });
+  $('#tools').addEventListener('scroll', closeFlyout);
+  syncGroups();
+
+  // ---------- resizable tool ribbon: drag its right edge (or focus it and use ← →); double-click resets
+  const nav = $('#tools'), grip = $('#navGrip'), NAV_MIN = 40, NAV_MAX = 300, NAV_KEY = LS + '-navw';
+  let navW = null;
+  try { const v = +localStorage.getItem(NAV_KEY); if (v >= NAV_MIN && v <= NAV_MAX) navW = v; } catch (e) { /* ignore */ }
+  function layoutNav() {
+    const main = nav.parentElement;
+    if (navW) main.style.setProperty('--navw', navW + 'px'); else main.style.removeProperty('--navw');
+    const w = nav.getBoundingClientRect().width, compact = w < 100;
+    nav.classList.toggle('compact', compact);
+    // icons grow with the ribbon: 18 px at the default widths, up to 32 px
+    nav.style.setProperty('--navicon', Math.round(Math.max(14, Math.min(32, compact ? (w - 18) / 2 : 18 + (w - 118) / 10))) + 'px');
+    grip.style.left = (nav.offsetLeft + w) + 'px';
+    grip.setAttribute('aria-valuenow', Math.round(w));
+  }
+  function setNavW(v, save) {
+    navW = v == null ? null : Math.max(NAV_MIN, Math.min(NAV_MAX, Math.round(v)));
+    layoutNav(); render();
+    if (save) try { if (navW) localStorage.setItem(NAV_KEY, navW); else localStorage.removeItem(NAV_KEY); } catch (e) { /* ignore */ }
+  }
+  grip.setAttribute('aria-valuemin', NAV_MIN); grip.setAttribute('aria-valuemax', NAV_MAX);
+  grip.addEventListener('pointerdown', e => {
+    e.preventDefault(); grip.setPointerCapture(e.pointerId); grip.classList.add('drag'); document.body.classList.add('navdrag');
+    const x0 = e.clientX, w0 = nav.getBoundingClientRect().width;
+    closeFlyout(); const move = ev => setNavW(w0 + ev.clientX - x0, false);
+    const up = () => { grip.removeEventListener('pointermove', move); grip.classList.remove('drag'); document.body.classList.remove('navdrag'); setNavW(navW, true); };
+    grip.addEventListener('pointermove', move); grip.addEventListener('pointerup', up, { once: true }); grip.addEventListener('pointercancel', up, { once: true });
+  });
+  grip.addEventListener('dblclick', () => setNavW(null, true));
+  grip.addEventListener('keydown', e => {
+    const d = { ArrowLeft: -10, ArrowRight: 10 }[e.key];
+    if (d) { e.preventDefault(); e.stopPropagation(); setNavW(nav.getBoundingClientRect().width + d, true); }
+    else if (e.key === 'Home' || e.key === 'Enter') { e.preventDefault(); setNavW(null, true); }
   });
 
   // ---------- pointer interaction
@@ -1032,6 +1116,7 @@
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); doUndo(); return; }
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') { e.preventDefault(); doRedo(); return; }
     if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.key === 'Escape' && flyGroup) { closeFlyout(); return; }
     if (e.key === 'Escape') { if (pending) { pending = null; drawOverlay(); } else setTool('select'); return; }
     if ((e.key === 'Delete' || e.key === 'Backspace') && sel) { const s = sel; change(() => { if (s.kind === 'node') deleteNode(node(s.id)); else deleteMember(member(s.id)); }); return; }
     const arrows = { ArrowLeft: [60, 0], ArrowRight: [-60, 0], ArrowUp: [0, 60], ArrowDown: [0, -60] }[e.key];
@@ -1040,7 +1125,7 @@
     const t = TOOLS.find(x => x[2] && x[2].length === 1 && x[2].toLowerCase() === e.key.toLowerCase()); if (t) setTool(t[0]);
   });
   window.addEventListener('keyup', e => { if (e.key === ' ') spaceDown = false; });
-  window.addEventListener('resize', () => render());
+  window.addEventListener('resize', () => { closeFlyout(); layoutNav(); render(); });
 
   function doUndo() { if (!undo.length) return; redo.push(JSON.stringify(model)); restore(undo.pop()); }
   function doRedo() { if (!redo.length) return; undo.push(JSON.stringify(model)); restore(redo.pop()); }
@@ -1146,5 +1231,6 @@
   let restored = false;
   try { const t = localStorage.getItem(LS); if (t) { const m = JSON.parse(t); if (m && m.members && m.members.length) { m.settings = Object.assign(blank().settings, m.settings || {}); model = m; restored = true; } } } catch (e) { /* ignore */ }
   setTool('select');
+  layoutNav();
   requestAnimationFrame(() => { if (!restored) { EX['Simply supported beam, uniform load'](); } fit(); refresh(); });
 })();

@@ -12,13 +12,13 @@ header button:hover,.btn:hover{border-color:var(--accent);color:var(--accent)}
 .badge{margin-left:auto;padding:4px 12px;border-radius:999px;font-weight:600;font-size:12px;background:var(--accent-soft);color:var(--accent)}
 .badge.bad{background:#fde8e8;color:#b42318}.badge.ok{background:#e3f6ec;color:#0b6b3a}
 [data-theme="dark"] .badge.bad{background:#4a1f1f;color:#ffb4a8}[data-theme="dark"] .badge.ok{background:#173a29;color:#7fe0aa}
-main{flex:1;display:grid;grid-template-columns:118px minmax(0,1fr) 370px;min-height:0}
+main{flex:1;display:grid;grid-template-columns:var(--navw,118px) minmax(0,1fr) 370px;min-height:0;position:relative}
 nav{background:var(--panel);border-right:1px solid var(--line);padding:8px 6px;overflow:auto;display:flex;flex-direction:column;gap:2px}
 nav .sep{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:8px 6px 2px}
 nav button{display:flex;align-items:center;gap:8px;border:0;background:none;border-radius:6px;padding:6px 8px;cursor:pointer;text-align:left;width:100%}
 nav button:hover{background:var(--bg)}
 nav button.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
-nav button svg{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+nav button svg{width:var(--navicon,18px);height:var(--navicon,18px);flex:none;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 nav button kbd{margin-left:auto;font:10px ui-monospace,monospace;color:var(--muted)}
 #stage{display:flex;flex-direction:column;min-width:0;min-height:0}
 #chips{display:flex;gap:6px;padding:7px 10px;flex-wrap:wrap;align-items:center;border-bottom:1px solid var(--line);background:var(--panel)}
@@ -66,7 +66,7 @@ td.eq{white-space:normal;text-align:left;font-family:ui-monospace,Consolas,monos
 .kv{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;font-variant-numeric:tabular-nums}
 .kv span:nth-child(odd){color:var(--muted)}
 ul.help{padding-left:18px;margin:4px 0 10px}ul.help li{margin:3px 0}
-@media (max-width:900px){main{grid-template-columns:54px minmax(0,1fr)}aside{position:fixed;right:0;bottom:0;left:0;height:42vh;border-top:1px solid var(--line);z-index:5}nav button span,nav button kbd,nav .sep{display:none}#stage{padding-bottom:42vh}}
+@media (max-width:900px){main{grid-template-columns:var(--navw,54px) minmax(0,1fr)}aside{position:fixed;right:0;bottom:0;left:0;height:42vh;border-top:1px solid var(--line);z-index:5}#stage{padding-bottom:42vh}}
 @media print{
   header .hgroup,nav,#chips,#status,.tabs,.btns,.noprint{display:none!important}
   body{overflow:visible;display:block;background:#fff}main{display:block}#canvas{height:420px}aside{border:0;display:block}#panel{overflow:visible}
@@ -82,3 +82,39 @@ td.eq{font-family:inherit;font-size:12px}
 .he{color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0;margin-left:6px;unicode-bidi:isolate}
 html{color-scheme:light}html[data-theme="dark"]{color-scheme:dark}
 #chips input[type=color]{width:26px;height:22px;padding:0;border:1px solid var(--line);border-radius:5px;background:none;cursor:pointer}
+nav.compact button{justify-content:center;padding:6px 4px}
+#navGrip{position:absolute;top:0;bottom:0;width:8px;margin-left:-4px;cursor:col-resize;z-index:6;touch-action:none}
+#navGrip::after{content:"";position:absolute;top:0;bottom:0;left:3px;width:2px;background:transparent;transition:background .15s}
+#navGrip:hover::after,#navGrip.drag::after,#navGrip:focus-visible::after{background:var(--accent)}
+#navGrip:focus-visible{outline:none}
+body.navdrag,body.navdrag *{cursor:col-resize!important;user-select:none}
+@media print{#navGrip{display:none}}
+@media (max-width:900px){#navGrip{bottom:42vh}}
+/* ribbon sections */
+.gall{display:flex;gap:4px;margin:0 2px 4px}
+nav .gall button{flex:1;justify-content:center;font-size:10.5px;color:var(--muted);padding:3px 2px;border:1px solid var(--line);border-radius:5px}
+nav .gall button:hover{color:var(--accent);border-color:var(--accent)}
+.grp{display:flex;flex-direction:column;gap:2px}
+nav button.ghead{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;padding:8px 6px 2px;margin-top:2px;justify-content:space-between}
+nav button.ghead:hover{background:none;color:var(--accent)}
+nav button.ghead .chev{width:10px;height:10px;transition:transform .15s}
+.grp.collapsed .ghead .chev{transform:rotate(-90deg)}
+.grp.collapsed .gbody,.grp:not(.collapsed) .gfold{display:none}
+.gbody{display:flex;flex-direction:column;gap:2px}
+nav button.gfold{position:relative}
+.gfold .more{position:absolute;right:3px;bottom:3px;width:0;height:0;border-left:5px solid transparent;border-bottom:5px solid currentColor;opacity:.55}
+nav.compact button span,nav.compact button kbd,nav.compact .gall{display:none}
+nav.compact button.ghead{display:flex;justify-content:center;padding:6px 0 2px;border-top:1px solid var(--line);border-radius:0;margin-top:4px}
+nav.compact .grp:first-of-type button.ghead{border-top:0;margin-top:0}
+#flyout{position:fixed;z-index:20;background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.18);padding:6px}
+#flyout[hidden]{display:none}
+#flyout .fname{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;margin:0 4px 4px}
+#flyout .frow{display:flex;flex-wrap:wrap;gap:4px}
+#flyout button{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:64px;border:0;background:none;border-radius:7px;padding:6px 8px;cursor:pointer;font-size:12px;color:inherit}
+#flyout button:hover,#flyout button:focus-visible{background:var(--bg);outline:none}
+#flyout button.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
+#flyout button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+#flyout button kbd{font:10px ui-monospace,monospace;color:var(--muted)}
+@media print{#flyout{display:none!important}}
+nav button.gfold span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+nav .gall button{white-space:nowrap}
