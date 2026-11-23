@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Statics Solver</title>
+<link rel="icon" href="icon.ico">
+<style id="svgcss">
+:root{
+  --bg:#f6f7f9; --panel:#ffffff; --ink:#1c2430; --muted:#6b7686; --line:#dfe3ea; --accent:#2457d6; --accent-soft:#e6edfd;
+  --member:#1c2430; --grid:#cfd5de; --load:#c2410c; --react:#0f8a4d; --cN:#0e7c86; --cS:#2457d6; --cM:#c81e3a; --cD:#7a3fc4; --cIL:#b7791f; --canvas:#ffffff;
+}
+:root[data-theme="dark"]{ --bg:#14171c; --panel:#1b1f26; --ink:#e6e9ee; --muted:#96a0b0; --line:#2c323c; --accent:#7aa2ff; --accent-soft:#232c44;
+    --member:#e6e9ee; --grid:#39414d; --load:#ff9a62; --react:#4fd18e; --cN:#4fc3cc; --cS:#7aa2ff; --cM:#ff6b81; --cD:#b993f0; --cIL:#e0b45a; --canvas:#171a20; }
+
+svg text{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:11.5px;fill:var(--ink);paint-order:stroke;stroke:var(--canvas);stroke-width:3px;stroke-linejoin:round}
+.bgr{fill:var(--canvas)} .gdot{fill:var(--grid)}
+.mem{stroke:var(--member);stroke-width:3.2;stroke-linecap:round;fill:none}
+.mem.sel{stroke:var(--accent);stroke-width:4.5}
+.fibre{stroke:var(--muted);stroke-width:1;stroke-dasharray:5 4;fill:none}
+.nd{fill:var(--member)} .nd.sel{fill:var(--accent);stroke:var(--accent-soft);stroke-width:5}
+.hinge{fill:var(--canvas);stroke:var(--member);stroke-width:1.8}
+.sup{stroke:var(--member);stroke-width:1.6;fill:var(--canvas);stroke-linejoin:round} .sup.thin{stroke-width:1;fill:none}
+.spring{stroke:var(--member);stroke-width:1.4;fill:none}
+.ld{stroke:var(--load);stroke-width:1.6;fill:none} .ldf{fill:var(--load);stroke:none} text.ldt{fill:var(--load);font-weight:600}
+.rc{stroke:var(--react);stroke-width:2;fill:none} .rcf{fill:var(--react);stroke:none} text.rct{fill:var(--react);font-weight:600}
+.dg{stroke-width:1.5;fill-opacity:.13} .dgh{stroke-width:.7;opacity:.55}
+.dgl{stroke-width:1.5;fill:none} text.sgn{font-size:17px;font-weight:700}
+.dN{stroke:var(--cN);fill:var(--cN)} .dS{stroke:var(--cS);fill:var(--cS)} .dM{stroke:var(--cM);fill:var(--cM)} .dV{stroke:var(--cD);fill:var(--cD)} .dIL{stroke:var(--cIL);fill:var(--cIL)}
+text.tN{fill:var(--cN)} text.tS{fill:var(--cS)} text.tM{fill:var(--cM)} text.tV{fill:var(--cD)} text.tIL{fill:var(--cIL)}
+.def{stroke:var(--cD);stroke-width:1.8;stroke-dasharray:6 3;fill:none}
+.rub{stroke:var(--accent);stroke-width:2;stroke-dasharray:5 4;fill:none}
+.probe{fill:var(--accent);stroke:var(--canvas);stroke-width:2}
+text.lbl{font-weight:700;font-size:12.5px} text.mlbl{fill:var(--muted);font-size:10.5px} text.leg{font-size:11.5px;font-weight:600}
+</style>
+<link rel="stylesheet" href="vendor/katex/katex.min.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <div class="brand">Statics Solver <span>beams · frames · trusses</span></div>
+  <div class="hgroup">
+    <button id="bNew" title="Start an empty model">New</button>
+    <select id="examples" title="Load a worked example"><option value="">Examples…</option></select>
+    <button id="bOpen" title="Open a saved model (.json)">Open</button>
+    <button id="bSave" title="Save the model as .json">Save</button>
+    <button id="bSvg" title="Download the drawing as SVG">Export SVG</button>
+    <button id="bPrint" title="Print drawing and calculations">Print</button>
+    <input type="file" id="file" accept=".json" hidden>
+  </div>
+  <div class="hgroup">
+    <button id="bUndo" title="Undo (Ctrl+Z)">Undo</button>
+    <button id="bRedo" title="Redo (Ctrl+Y)">Redo</button>
+    <button id="bFit" title="Zoom to fit">Fit</button>
+    <button id="bTheme" title="Switch between light and dark theme">Dark theme</button>
+  </div>
+  <div id="badge" class="badge">—</div>
+</header>
+<main>
+  <nav id="tools"></nav>
+  <section id="stage">
+    <div id="chips"></div>
+    <svg id="canvas" xmlns="http://www.w3.org/2000/svg"></svg>
+    <div id="status"><span id="hint"></span><span id="read"></span><span id="coords"></span></div>
+  </section>
+  <aside>
+    <div class="tabs"><button data-tab="inspect" class="on">Inspector</button><button data-tab="calc">Calculations</button><button data-tab="help">Help</button></div>
+    <div id="panel"></div>
+  </aside>
+</main>
+<script src="vendor/katex/katex.min.js"></script>
+<script src="solver.js"></script>
+<script src="classic.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
